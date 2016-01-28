@@ -1,0 +1,4 @@
+#!/bin/bash
+
+T="$(dirname $(readlink -f $0))"
+python "$T"/src/lokatt.py $*
