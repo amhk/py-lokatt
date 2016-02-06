@@ -16,7 +16,7 @@ class App(object):
         t1.start()
 
         t2 = Thread(target=ui.input_worker,
-                    args=(ctx.window,
+                    args=(ctx.root_window,
                           lambda x: ctx.queue.put((ctrl.EVENT_KEYPRESS, x))))
         t2.daemon = True
         t2.start()

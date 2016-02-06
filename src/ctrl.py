@@ -1,5 +1,7 @@
 from Queue import PriorityQueue
-import curses
+
+from ui import BufferWindow
+from ui import refresh as refresh_ui
 
 
 EVENT_COMMAND = 10
@@ -11,26 +13,37 @@ class Context:
     pass
 
 
-def create_context(window):
+class Buffer(object):
+    def __init__(self, window):
+        self._entries = []
+        self._window = window
+
+    def accept(self, entry):
+        # TODO: if entry does not pass filter, bail
+        self._entries.append(entry)
+        self._window.add_logcat_entry(entry)
+
+
+def create_context(root_window):
     ctx = Context()
     ctx.queue = PriorityQueue()
-    ctx.window = window
+    ctx.root_window = root_window
     ctx.done = False
     return ctx
 
 
 def main_loop(ctx):
+    win = BufferWindow(ctx.root_window)
+    buf = Buffer(win)
+
     while not ctx.done:
         type_, data = ctx.queue.get()
-        y, _ = curses.getsyx()
-        maxy, _ = ctx.window.getmaxyx()
 
-        if y > maxy - 2:
-            ctx.window.erase()
-            ctx.window.move(0, 0)
+        if type_ == EVENT_LOGCAT:
+            buf.accept(data)
 
-        ctx.window.addstr('type={} data={}\n'.format(type_, repr(data)))
-        ctx.window.refresh()
+        if type_ == EVENT_KEYPRESS:
+            if data == ord('q'):
+                ctx.done = True
 
-        if type_ == EVENT_KEYPRESS and data == ord('q'):
-            ctx.done = True
+        refresh_ui()
