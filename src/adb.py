@@ -1,19 +1,26 @@
 import os
 import select
 import shlex
+import string
 import struct
 import subprocess
 
 
 class LogcatEntry(object):
     def __init__(self, pid, tid, sec, nsec, level, tag, text):
+        def _wash(s):
+            s = ''.join(ch if ch in string.printable else repr(ch) for ch in s)
+            s = s.replace('\n', repr('\n'))
+            s = s.replace('\t', repr('\t'))
+            return s
+
         self.pid = pid
         self.tid = tid
         self.sec = sec
         self.nsec = nsec
         self.level = level
-        self.tag = tag
-        self.text = text
+        self.tag = _wash(tag)
+        self.text = _wash(text)
 
 
 class Device(object):
