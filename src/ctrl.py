@@ -1,5 +1,7 @@
 from Queue import PriorityQueue
+import shlex
 
+from cmd import get_command
 from ui import BufferWindow, StatusbarWindow
 from ui import refresh as refresh_ui
 
@@ -67,6 +69,28 @@ def main_loop(ctx):
 
         if type_ == EVENT_KEYPRESS:
             if data == ord('q'):
-                ctx.done = True
+                _post_command(ctx, 'quit')
+
+        if type_ == EVENT_COMMAND:
+            name = data[0]
+            argv = data[1:]
+            cmd = get_command(name)
+            if cmd is not None:
+                try:
+                    cmd(ctx, argv)
+                except ValueError as e:
+                    cmd = get_command('error')
+                    argv = ['{}: {}'.format(name, e.message), ]
+                    cmd(ctx, argv)
+            else:
+                cmd = get_command('error')
+                argv = ['{}: command not found'.format(name), ]
+                cmd(ctx, argv)
 
         refresh_ui()
+
+
+def _post_command(ctx, argv):
+    if type(argv) == str:
+        argv = shlex.split(argv)
+    ctx.queue.put((EVENT_COMMAND, argv))
