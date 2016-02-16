@@ -53,7 +53,3 @@ class TestCase(unittest.TestCase):
     def test_invalid_path(self):
         with self.assertRaises(Exception):
             dev = Device('this-path-does-not-exist')
-
-
-if __name__ == '__main__':
-    unittest.main()
