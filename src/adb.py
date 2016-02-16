@@ -34,7 +34,8 @@ class Device(object):
             self._cmd = 'adb {} exec-out "logcat -B 2>/dev/null"'.format(arg)
 
     def entries(self):
-        proc = subprocess.Popen(shlex.split(self._cmd), stdout=subprocess.PIPE)
+        dev_null = open('/dev/null', 'w')
+        proc = subprocess.Popen(shlex.split(self._cmd), stdout=subprocess.PIPE, stderr=dev_null)
         while select.select([proc.stdout], [], []):
             x = proc.stdout.read(2 * 2)
             if len(x) == 0:  # end of stream
@@ -61,6 +62,7 @@ class Device(object):
             text = x[null + 1:-1].strip()
 
             yield LogcatEntry(pid, tid, sec, nsec, level, tag, text)
+        dev_null.close()
 
 
 def logcat_worker(callback):
