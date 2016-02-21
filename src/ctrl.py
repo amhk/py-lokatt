@@ -19,14 +19,56 @@ class Buffer(object):
     def __init__(self, window):
         self._entries = []
         self._window = window
+        self._scroll = True
+
+    def _split_range(self, values, count, lineno, anchor):
+        if anchor not in ('top', 'middle', 'bottom'):
+            raise ValueError('bad anchor value {}'.format(anchor))
+
+        if lineno < 0:
+            lineno = len(values) + lineno + 1
+
+        if anchor == 'top':
+            low = lineno - 1
+            high = low + count
+            return values[low:high]
+
+        elif anchor == 'middle':
+            if count % 2 != 0:
+                low = lineno - 1 - count / 2
+            else:
+                low = lineno - count / 2
+            high = low + count
+            return values[low:high]
+
+        else:
+            low = lineno - count
+            high = lineno
+            if low < 0:
+                return values[:high]
+            else:
+                return values[low:high]
 
     def accept(self, entry):
         # TODO: if entry does not pass filter, bail
         self._entries.append(entry)
-        self._window.add_logcat_entry(entry)
+        if self._scroll:
+            self._window.add_logcat_entry(entry)
 
     def get_number_of_entries(self):
         return len(self._entries)
+
+    def goto_line(self, lineno, anchor):
+        if lineno == 0:
+            raise ValueError('bad line value 0')
+        if anchor not in ('top', 'middle', 'bottom'):
+            raise ValueError('bad anchor value {}'.format(anchor))
+
+        self._scroll = False
+
+        height = self._window.height()
+        entries = self._split_range(self._entries, height, lineno, anchor)
+        self._window.fill(entries)
 
 
 class Statusbar(object):
@@ -50,26 +92,34 @@ def create_context(root_window):
     ctx.queue = PriorityQueue()
     ctx.root_window = root_window
     ctx.done = False
+    ctx.buf = None
+    ctx.statusbar = None
     return ctx
 
 
 def main_loop(ctx):
     win = BufferWindow(ctx.root_window)
-    buf = Buffer(win)
+    ctx.buf = Buffer(win)
 
     win = StatusbarWindow(ctx.root_window)
-    statusbar = Statusbar(win)
+    ctx.statusbar = Statusbar(win)
 
     while not ctx.done:
         type_, data = ctx.queue.get()
 
         if type_ == EVENT_LOGCAT:
-            buf.accept(data)
-            statusbar.accept(buf)
+            ctx.buf.accept(data)
+            ctx.statusbar.accept(ctx.buf)
 
         if type_ == EVENT_KEYPRESS:
             if data == ord('q'):
                 _post_command(ctx, 'quit')
+            if data == ord('1'):
+                _post_command(ctx, 'goto-line --lineno=1 --anchor=top')
+            if data == ord('2'):
+                _post_command(ctx, 'goto-line --lineno=100 --anchor=middle')
+            if data == ord('3'):
+                _post_command(ctx, 'goto-line --lineno=-1 --anchor=bottom')
 
         if type_ == EVENT_COMMAND:
             name = data[0]
