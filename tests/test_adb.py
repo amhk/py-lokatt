@@ -11,12 +11,6 @@ class TestCase(unittest.TestCase):
         self._dev = Device(path)
         self._gen = self._dev.entries()
 
-    def tearDown(self):
-        # fast-forward remaining entries to avoid breaking the pipe
-        # and upsetting cat
-        for _ in self._gen:
-            pass
-
     def test_fields_first_entry(self):
         logcat = self._gen.next()
 
@@ -53,7 +47,3 @@ class TestCase(unittest.TestCase):
     def test_invalid_path(self):
         with self.assertRaises(Exception):
             dev = Device('this-path-does-not-exist')
-
-
-if __name__ == '__main__':
-    unittest.main()
