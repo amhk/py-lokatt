@@ -35,6 +35,14 @@ class _GotoLine(_Command):
         ctx.buf.goto_line(args.lineno, args.anchor)
 
 
+class _Resume(_Command):
+    def __init__(self):
+        _Command.__init__(self, 'resume', 'Resume buffer scrolling.')
+
+    def _execute(self, ctx, args):
+        ctx.buf.resume_scolling()
+
+
 class _Quit(_Command):
     def __init__(self):
         _Command.__init__(self, 'quit', 'Quit program execution.')

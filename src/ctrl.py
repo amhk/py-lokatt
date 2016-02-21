@@ -70,6 +70,13 @@ class Buffer(object):
         entries = self._split_range(self._entries, height, lineno, anchor)
         self._window.fill(entries)
 
+    def resume_scolling(self):
+        self._scroll = True
+
+        height = self._window.height()
+        entries = self._split_range(self._entries, height, -1, 'bottom')
+        self._window.fill(entries)
+
 
 class Statusbar(object):
     def __init__(self, window):
@@ -120,6 +127,8 @@ def main_loop(ctx):
                 _post_command(ctx, 'goto-line --lineno=100 --anchor=middle')
             if data == ord('3'):
                 _post_command(ctx, 'goto-line --lineno=-1 --anchor=bottom')
+            if data == ord('4'):
+                _post_command(ctx, 'resume')
 
         if type_ == EVENT_COMMAND:
             name = data[0]
