@@ -34,6 +34,16 @@ class BufferWindow(object):
         self._add_entry(entry)
         self._schedule_refresh()
 
+    def fill(self, entries):
+        self._window.erase()
+        self._y = 0
+        for e in entries:
+            self._add_entry(e)
+        self._schedule_refresh()
+
+    def height(self):
+        return self._height
+
 
 class StatusbarWindow(object):
     HEIGHT = 1
