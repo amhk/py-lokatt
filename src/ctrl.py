@@ -1,10 +1,13 @@
 from Queue import PriorityQueue
 import shlex
+import logging
 
 from cmd import get_command
 from ui import BufferWindow, StatusbarWindow
 from ui import refresh as refresh_ui
 
+
+logger = logging.getLogger(__name__)
 
 EVENT_COMMAND = 10
 EVENT_KEYPRESS = 20
@@ -131,6 +134,7 @@ def main_loop(ctx):
                 _post_command(ctx, 'resume')
 
         if type_ == EVENT_COMMAND:
+            logger.debug('EVENT_COMMAND: {}'.format(' '.join(data)))
             name = data[0]
             argv = data[1:]
             cmd = get_command(name)
