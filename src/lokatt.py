@@ -1,5 +1,6 @@
 from threading import Thread
 import curses
+import logging
 
 import adb
 import ctrl
@@ -24,4 +25,11 @@ class App(object):
         ctrl.main_loop(ctx)
 
 if __name__ == '__main__':
+    debug = False
+    if debug:
+        FORMAT = '%(filename)s:%(lineno)d: %(message)s'
+        logging.basicConfig(format=FORMAT, level=logging.DEBUG, filename='/tmp/lokatt.log')
+    else:
+        logging.basicConfig(level=logging.CRITICAL + 1)
+
     curses.wrapper(App())
