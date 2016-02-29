@@ -2,12 +2,44 @@ from threading import Thread
 import argparse
 import curses
 import logging
+import sys
+import traceback
 
 import adb
 import ctrl
 import ui
 
 
+def _log_exception(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            if kwargs['args'].debug:
+                logger = logging.getLogger(__name__)
+                logger.error(traceback.format_exc())
+            else:
+                traceback.print_exc()
+            sys.exit(1)
+    return wrapper
+
+
+@_log_exception
+def _logcat_worker(args, ctx):
+    path = None
+    if args.input:
+        path = args.input.name
+
+    adb.logcat_worker(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)),
+                      path=path, lambd=args.random_delay)
+
+
+@_log_exception
+def _ui_worker(args, ctx):
+    ui.input_worker(ctx.root_window, lambda x: ctx.queue.put((ctrl.EVENT_KEYPRESS, x)))
+
+
+@_log_exception
 def _main(window, *_, **kwargs):
     args = kwargs['args']
 
@@ -16,15 +48,11 @@ def _main(window, *_, **kwargs):
     path = None
     if args.input:
         path = args.input.name
-    t1 = Thread(target=adb.logcat_worker,
-                args=(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)), ),
-                kwargs={'path': path, 'lambd': args.random_delay})
+    t1 = Thread(target=_logcat_worker, kwargs={'args': args, 'ctx': ctx})
     t1.daemon = True
     t1.start()
 
-    t2 = Thread(target=ui.input_worker,
-                args=(ctx.root_window,
-                      lambda x: ctx.queue.put((ctrl.EVENT_KEYPRESS, x))))
+    t2 = Thread(target=_ui_worker, kwargs={'args': args, 'ctx': ctx})
     t2.daemon = True
     t2.start()
 
