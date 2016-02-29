@@ -1,4 +1,5 @@
 from threading import Thread
+import argparse
 import curses
 import logging
 
@@ -25,10 +26,15 @@ class App(object):
         ctrl.main_loop(ctx)
 
 if __name__ == '__main__':
-    debug = False
-    if debug:
+    parser = argparse.ArgumentParser(prog='lokatt')
+    parser.add_argument('--debug', metavar='path', type=argparse.FileType('a'))
+    args = parser.parse_args()
+
+    if args.debug is not None:
+        if args.debug.name == '<stdout>':
+            raise ValueError('debug: stdout not supported')
         FORMAT = '%(filename)s:%(lineno)d: %(message)s'
-        logging.basicConfig(format=FORMAT, level=logging.DEBUG, filename='/tmp/lokatt.log')
+        logging.basicConfig(format=FORMAT, level=logging.DEBUG, filename=args.debug.name)
     else:
         logging.basicConfig(level=logging.CRITICAL + 1)
 
