@@ -13,8 +13,12 @@ def _main(window, *_, **kwargs):
 
     ctx = ctrl.create_context(window)
 
+    path = None
+    if args.input:
+        path = args.input.name
     t1 = Thread(target=adb.logcat_worker,
-                args=(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)), ))
+                args=(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)), ),
+                kwargs={'path': path, 'lambd': args.random_delay})
     t1.daemon = True
     t1.start()
 
@@ -30,7 +34,15 @@ def _main(window, *_, **kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='lokatt')
     parser.add_argument('--debug', metavar='path', type=argparse.FileType('a'))
+    parser.add_argument('--input', metavar='path', type=argparse.FileType('r'))
+    parser.add_argument('--random-delay', metavar='lambda', type=float)
     args = parser.parse_args()
+
+    if args.random_delay is not None:
+        if args.random_delay <= 0:
+            raise ValueError('lambda must be greater than zero')
+        if args.input is None:
+            raise ValueError('--random-delay requires --input')
 
     if args.debug is not None:
         if args.debug.name == '<stdout>':
