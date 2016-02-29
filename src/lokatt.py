@@ -8,22 +8,24 @@ import ctrl
 import ui
 
 
-class App(object):
-    def __call__(self, window):
-        ctx = ctrl.create_context(window)
+def _main(window, *_, **kwargs):
+    args = kwargs['args']
 
-        t1 = Thread(target=adb.logcat_worker,
-                    args=(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)), ))
-        t1.daemon = True
-        t1.start()
+    ctx = ctrl.create_context(window)
 
-        t2 = Thread(target=ui.input_worker,
-                    args=(ctx.root_window,
-                          lambda x: ctx.queue.put((ctrl.EVENT_KEYPRESS, x))))
-        t2.daemon = True
-        t2.start()
+    t1 = Thread(target=adb.logcat_worker,
+                args=(lambda x: ctx.queue.put((ctrl.EVENT_LOGCAT, x)), ))
+    t1.daemon = True
+    t1.start()
 
-        ctrl.main_loop(ctx)
+    t2 = Thread(target=ui.input_worker,
+                args=(ctx.root_window,
+                      lambda x: ctx.queue.put((ctrl.EVENT_KEYPRESS, x))))
+    t2.daemon = True
+    t2.start()
+
+    ctrl.main_loop(ctx)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='lokatt')
@@ -38,4 +40,4 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.CRITICAL + 1)
 
-    curses.wrapper(App())
+    curses.wrapper(_main, args=args)
